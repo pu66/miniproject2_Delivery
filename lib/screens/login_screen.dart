@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:test_databse/controller/login_controller.dart';
 import 'package:test_databse/model/profile.dart';
+import 'package:test_databse/screens/rider_screen.dart';
 import 'package:test_databse/screens/select_register_screen.dart';
+import 'package:test_databse/screens/user_screen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,6 +22,46 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
 
   bool _isPressedRider = false;
+
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate()) {
+      final controller = LoginController();
+      final profile = await controller.login(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      if (profile != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("เข้าสู่ระบบสำเร็จ!")));
+
+        if (profile.userType == UserType.user) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => UserHomePage()),
+          );
+        } else if (profile.userType == UserType.rider) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => RiderHomePage()),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("อีเมลหรือรหัสผ่านไม่ถูกต้อง")),
+          );
+        }
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("เข้าสู่ระบบเรียบร้อย")));
+
+        print("Email: ${emailController.text}");
+
+        print("Password: ${passwordController.text}");
+      }
+    }
+  }
 
   Widget _buildButton({
     required String text,
@@ -67,19 +110,6 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
-  }
-
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      // ถ้าฟอร์มถูกต้อง
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("เข้าสู่ระบบเรียบร้อย")));
-
-      print("Email: ${emailController.text}");
-
-      print("Password: ${passwordController.text}");
-    }
   }
 
   @override

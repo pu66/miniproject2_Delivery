@@ -1,7 +1,12 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:test_databse/controller/%E0%B8%B5user_regis_controller.dart';
 import 'package:test_databse/model/profile.dart';
+import 'package:test_databse/screens/login_screen.dart';
 
 class UserRegisterPage extends StatefulWidget {
   const UserRegisterPage({super.key, required UserType userType});
@@ -10,15 +15,18 @@ class UserRegisterPage extends StatefulWidget {
   State<UserRegisterPage> createState() => _UserRegisterPageState();
 }
 
+File? selectedImage;
+
 class _UserRegisterPageState extends State<UserRegisterPage> {
   final _formKey = GlobalKey<FormState>();
+  final _registerController = UserRegisController();
 
   // Controller ของ textfield
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-
+  FilePickerResult? _filePickerResult;
   bool _isPressedRider = false;
 
   Widget _buildButton({
@@ -72,18 +80,43 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
     );
   }
 
-  void _submitForm() {
+  Future<void> _openFilePicker() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      allowMultiple: false,
+      allowedExtensions: ["jpg", "jpeg", "png", "mp4"],
+      type: FileType.custom,
+    );
+    setState(() {
+      _filePickerResult = result;
+    });
+
+    Navigator.pushNamed(context, "/upload", arguments: _filePickerResult);
+  }
+
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       // ถ้าฟอร์มถูกต้อง
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("สมัครสมาชิกเรียบร้อย ✅")));
+      try {
+        await _registerController.register(
+          email: emailController.text.trim(),
+          password: passwordController.text.trim(),
+          name: nameController.text.trim(),
+          phone: phoneController.text.trim(),
+          imageFile: selectedImage,
+        );
 
-      // สามารถส่งข้อมูลไป backend ได้ เช่น
-      print("Name: ${nameController.text}");
-      print("Email: ${emailController.text}");
-      print("Phone: ${phoneController.text}");
-      print("Password: ${passwordController.text}");
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("สมัครสมาชิกเรียบร้อย ✅")));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginPage()),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("เกิดข้อผิดพลาด: $e")));
+      }
     }
   }
 
@@ -129,18 +162,25 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                         CircleAvatar(
                           radius: 45,
                           backgroundColor: Colors.grey[300],
-
-                          child: Icon(
-                            Icons.person,
-                            size: 45,
-                            color: Colors.white,
-                          ),
+                          backgroundImage: selectedImage != null
+                              ? FileImage(selectedImage!)
+                              : null,
+                          child: selectedImage == null
+                              ? Icon(
+                                  Icons.person,
+                                  size: 45,
+                                  color: Colors.white,
+                                )
+                              : null,
                         ),
+
                         IconButton(
+                          icon: Icon(Icons.add_a_photo),
+
                           onPressed: () async {
                             print("กดเลือกภาพแล้ว");
-                          },
-                          icon: Icon(Icons.add_a_photo),
+                            _openFilePicker();
+                          }, // อัปเดตรูป
                         ),
                       ],
                     ),
@@ -165,6 +205,7 @@ class _UserRegisterPageState extends State<UserRegisterPage> {
                       RequiredValidator(errorText: "กรุณาป้อนอีเมล"),
                       EmailValidator(errorText: "รูปแบบอีเมลไม่ถูกต้อง"),
                     ]),
+
                     decoration: const InputDecoration(
                       icon: Icon(Icons.email),
                       labelText: 'Email',

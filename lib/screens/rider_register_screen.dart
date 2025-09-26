@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:form_field_validator/form_field_validator.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:test_databse/controller/rider_register_controller.dart';
 import 'package:test_databse/model/profile.dart';
+import 'package:test_databse/screens/login_screen.dart';
+import 'package:test_databse/screens/user_register_screen.dart';
 
 class RiderRegisterPage extends StatefulWidget {
-  const RiderRegisterPage({super.key, required UserType userType});
+  final UserType? userType;
+  const RiderRegisterPage({super.key, this.userType});
 
   @override
   State<RiderRegisterPage> createState() => _RiderRegisterPageState();
@@ -13,12 +17,14 @@ class RiderRegisterPage extends StatefulWidget {
 class _RiderRegisterPageState extends State<RiderRegisterPage> {
   // สร้าง key สำหรับ Form
   final _formKey = GlobalKey<FormState>();
+  final _registerController = RiderRegisterController();
 
   // Controller ของ textfield
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController plateController = TextEditingController();
 
   bool _isPressedRider = false;
 
@@ -73,18 +79,27 @@ class _RiderRegisterPageState extends State<RiderRegisterPage> {
     );
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       // ถ้าฟอร์มถูกต้อง
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("สมัครสมาชิกเรียบร้อย ✅")));
+      try {
+        await _registerController.register(
+          email: emailController.text.trim(),
+          password: passwordController.text.trim(),
+          name: nameController.text.trim(),
+          phone: phoneController.text.trim(),
+          // imageFile: selectedImage,
+          plate: plateController.text.trim(),
+        );
 
-      // สามารถส่งข้อมูลไป backend ได้ เช่น
-      print("Name: ${nameController.text}");
-      print("Email: ${emailController.text}");
-      print("Phone: ${phoneController.text}");
-      print("Password: ${passwordController.text}");
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("สมัครสมาชิกเรียบร้อย ✅")));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginPage()),
+        );
+      } catch (e) {}
     }
   }
 
@@ -206,6 +221,7 @@ class _RiderRegisterPageState extends State<RiderRegisterPage> {
                   const SizedBox(height: 40),
 
                   TextFormField(
+                    controller: plateController,
                     keyboardType: TextInputType.text,
                     validator: MultiValidator([
                       RequiredValidator(errorText: "กรุณากรอกทะเบียนรถ"),

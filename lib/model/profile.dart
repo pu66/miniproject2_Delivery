@@ -1,4 +1,3 @@
-// profile_model.dart
 enum UserType { user, rider }
 
 class Profile {
@@ -7,6 +6,8 @@ class Profile {
   String password;
   String? name;
   UserType userType;
+  String? photoUrl;
+  String? plate;
 
   Profile({
     this.uid = '',
@@ -14,6 +15,8 @@ class Profile {
     required this.password,
     this.name,
     required this.userType,
+    this.photoUrl,
+    this.plate,
   });
 
   Map<String, dynamic> toMap() {
@@ -22,6 +25,8 @@ class Profile {
       'email': email,
       'name': name,
       'userType': userType.toString().split('.').last,
+      'photoUrl': photoUrl,
+      'plate': plate, // เพิ่มตรงนี้
     };
   }
 
@@ -32,6 +37,8 @@ class Profile {
       password: '',
       name: map['name'],
       userType: map['userType'] == 'rider' ? UserType.rider : UserType.user,
+      photoUrl: map['photoUrl'],
+      plate: map['plate'],
     );
   }
 }
